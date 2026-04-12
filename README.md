@@ -159,22 +159,17 @@ docker compose down
 
 ## CI/CD Pipeline
 
-Every push to `main` or `develop` triggers the following stages automatically:
-Push to GitHub
-│
-▼
-Backend tests (Jest)
-│
-▼
-Frontend build (Vite)
-│
-▼
-Docker image build
-│
-▼
-Trivy security scan
-
-View pipeline runs under the **Actions** tab in GitHub.
+    Every push to `main` or `develop` triggers the following stages automatically:
+    Push to GitHub
+          ↓
+    Backend Tests (Jest)
+          ↓
+    Frontend Build (Vite)
+          ↓
+    Docker Image Build
+          ↓
+    Trivy Security Scan
+    View pipeline runs under the **Actions** tab in GitHub.
 
 ---
 
