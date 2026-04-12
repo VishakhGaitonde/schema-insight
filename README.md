@@ -27,48 +27,53 @@ Existing tools treat schema evolution and redundancy detection as separate probl
 - React.js — frontend dashboard
 - Node.js — backend runtime
 
-**DevSecOps Pipeline**
-- GitHub Actions — CI/CD automation
-- Docker + Docker Compose — containerization
-- Jest — unit testing
-- SonarQube — static code analysis
-- Trivy — container vulnerability scanning
-- Terraform — infrastructure as code
-- Prometheus + Grafana — monitoring and dashboards
+### DevSecOps Pipeline
+- GitHub Actions — CI/CD automation  
+- Docker & Docker Compose — Containerization  
+- Jest — Unit testing  
+- SonarQube — Static code analysis  
+- Trivy — Container vulnerability scanning  
+- Terraform — Infrastructure as Code  
+- Prometheus + Grafana — Monitoring & dashboards  
 
 ---
 
-## Project Structure
-schemainsight/
-├── backend/
-│   ├── src/
-│   │   ├── engines/
-│   │   │   ├── schemaDiff.js         # Detects added/removed/modified fields
-│   │   │   ├── redundancyDetector.js # Finds duplicate and derived fields
-│   │   │   └── impactAnalyzer.js     # Links schema changes to redundancy
-│   │   ├── models/
-│   │   │   └── Analysis.js           # MongoDB schema
-│   │   ├── routes/
-│   │   │   └── analysis.js           # POST /api/analysis/analyze
-│   │   └── app.js                    # Express server + Prometheus metrics
-│   ├── tests/
-│   │   └── schemaDiff.test.js
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── UploadForm.jsx        # Schema and dataset input
-│   │   │   └── ReportView.jsx        # Analysis report display
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   └── Dockerfile
-├── .github/
-│   └── workflows/
-│       └── ci.yml                    # Full CI/CD pipeline
-├── docker-compose.yml
-└── README.md
+## 📁 Project Structure
+
+    schemainsight/
+    ├── backend/
+    │   ├── src/
+    │   │   ├── engines/
+    │   │   │   ├── schemaDiff.js
+    │   │   │   ├── redundancyDetector.js
+    │   │   │   └── impactAnalyzer.js
+    │   │   ├── models/
+    │   │   │   └── Analysis.js
+    │   │   ├── routes/
+    │   │   │   └── analysis.js
+    │   │   └── app.js
+    │   ├── tests/
+    │   │   └── schemaDiff.test.js
+    │   └── Dockerfile
+    │
+    ├── frontend/
+    │   ├── src/
+    │   │   ├── components/
+    │   │   │   ├── UploadForm.jsx
+    │   │   │   └── ReportView.jsx
+    │   │   ├── App.jsx
+    │   │   └── main.jsx
+    │   └── Dockerfile
+    │
+    ├── .github/
+    │   └── workflows/
+    │       └── ci.yml
+    │
+    ├── docker-compose.yml
+    └── README.md
 
 ---
+
 
 ## How to Run
 
