@@ -1,0 +1,69 @@
+{
+  "info": {
+    "name": "SchemaInsight API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:5000/health"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('Returns ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Analyze schema — basic",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/analysis/analyze",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"schemaV1\":{\"full_name\":\"string\",\"email\":\"string\"},\"schemaV2\":{\"first_name\":\"string\",\"last_name\":\"string\",\"email\":\"string\"},\"dataset\":[{\"full_name\":\"John Doe\",\"first_name\":\"John\",\"last_name\":\"Doe\",\"email\":\"john@example.com\"},{\"full_name\":\"Jane Smith\",\"first_name\":\"Jane\",\"last_name\":\"Smith\",\"email\":\"jane@example.com\"}]}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('Returns success', () => pm.expect(pm.response.json().success).to.be.true);",
+            "pm.test('Has diff', () => pm.expect(pm.response.json().result.diff).to.exist);",
+            "pm.test('Has impact', () => pm.expect(pm.response.json().result.impact).to.exist);",
+            "pm.test('Detects added fields', () => pm.expect(pm.response.json().result.diff.added).to.include('first_name'));",
+            "pm.test('Detects removed fields', () => pm.expect(pm.response.json().result.diff.removed).to.include('full_name'));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Analyze schema — missing fields",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/analysis/analyze",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"schemaV1\":{\"name\":\"string\"}}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Returns 400 for missing fields', () => pm.response.to.have.status(400));"
+          ]
+        }
+      }]
+    }
+  ]
+}
