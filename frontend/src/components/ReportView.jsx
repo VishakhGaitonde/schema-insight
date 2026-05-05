@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts';
 
-//color scheme inspired by Tailwind CSS v3
+//color scheme inspired by Tailwind CSS v1
 const SEVERITY_COLOR = {
   high:   { bg: '#fef2f2', border: '#fecaca', text: '#dc2626', label: 'High' },
   medium: { bg: '#fffbeb', border: '#fde68a', text: '#d97706', label: 'Medium' },
