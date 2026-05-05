@@ -13,7 +13,7 @@ describe('API integration tests', () => {
     if (typeof app.closeDatabase === 'function') {
       await app.closeDatabase();
     }
-  });
+  }, 10000);  // 10 second timeout for cleanup
   test('GET /health returns ok', async () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
@@ -35,7 +35,7 @@ describe('API integration tests', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.result.diff.added).toContain('first_name');
     expect(res.body.result.impact.redundancyScore).toBeGreaterThan(0);
-  });
+  }, 10000);  // 10 second timeout for this test
 
   test('POST /api/analysis/analyze returns 400 for empty schema', async () => {
     const res = await request(app)

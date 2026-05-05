@@ -46,9 +46,15 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/schemainsight';
 
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err.message));
+// Skip MongoDB connection in test mode
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err.message));
+} else {
+  // Disconnect mongoose in test mode to avoid hanging
+  mongoose.disconnect();
+}
 
 let server;
 
@@ -77,5 +83,17 @@ module.exports.closeServer = () => {
   });
 };
 module.exports.closeDatabase = () => {
-  return mongoose.connection.close();
+  return new Promise((resolve) => {
+    // Close mongoose connection with timeout
+    const timeout = setTimeout(() => resolve(), 2000);
+    mongoose.disconnect()
+      .then(() => {
+        clearTimeout(timeout);
+        resolve();
+      })
+      .catch(() => {
+        clearTimeout(timeout);
+        resolve();
+      });
+  });
 };

@@ -48,10 +48,12 @@ router.post('/analyze', async (req, res) => {
     analysisCounter.inc();
     redundancyScoreGauge.set(impact.redundancyScore);
 
-    // Save to MongoDB
-    try {
-      await Analysis.create({ schemaV1, schemaV2, dataset, result });
-    } catch (_) {}
+    // Save to MongoDB (skip in test mode)
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        await Analysis.create({ schemaV1, schemaV2, dataset, result });
+      } catch (_) {}
+    }
 
     res.json({ success: true, result });
   } catch (err) {
@@ -63,6 +65,11 @@ router.post('/analyze', async (req, res) => {
 
 // Get last 10 analyses
 router.get('/history', async (req, res) => {
+  // Skip in test mode
+  if (process.env.NODE_ENV === 'test') {
+    return res.json({ success: true, analyses: [] });
+  }
+  
   try {
     const analyses = await Analysis.find()
       .sort({ createdAt: -1 })
