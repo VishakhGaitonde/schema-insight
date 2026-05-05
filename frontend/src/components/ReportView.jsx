@@ -1,4 +1,7 @@
 import { RadialBarChart, RadialBar, PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
+} from 'recharts';
 
 const SEVERITY_COLOR = {
   high:   { bg: '#fef2f2', border: '#fecaca', text: '#dc2626', label: 'High' },
@@ -217,6 +220,32 @@ function RecommendationCards({ insights }) {
   );
 }
 
+function RedundancyBreakdown({ redundanciesV1, redundanciesV2 }) {
+  const types = ['duplicate', 'derived', 'grouping', 'constant'];
+  const data = types.map(type => ({
+    name: type,
+    V1: redundanciesV1.filter(r => r.type === type).length,
+    V2: redundanciesV2.filter(r => r.type === type).length,
+  }));
+
+  return (
+    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '1.5rem' }}>
+      <h2 style={{ margin: '0 0 1rem', fontSize: 16 }}>Redundancy breakdown — V1 vs V2</h2>
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <XAxis dataKey="name" tick={{ fontSize: 13 }} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 13 }} />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="V1" fill="#94a3b8" name="Before change" radius={[4,4,0,0]} />
+          <Bar dataKey="V2" fill="#2563eb" name="After change" radius={[4,4,0,0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </section>
+  );
+}
+
 export default function ReportView({ report }) {
   const { diff, redundanciesV1, redundanciesV2, impact } = report;
 
@@ -232,7 +261,7 @@ export default function ReportView({ report }) {
       <RedundancyReport redundancies={redundanciesV2} />
       <ImpactAnalysis insights={impact.insights} />
       <RecommendationCards insights={impact.insights} />
-
+      <RedundancyBreakdown redundanciesV1={redundanciesV1} redundanciesV2={redundanciesV2} />
     </div>
   );
 }
