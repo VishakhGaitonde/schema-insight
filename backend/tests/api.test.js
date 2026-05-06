@@ -204,3 +204,35 @@ describe('Error path coverage (final boost)', () => {
   });
 
 });
+
+describe('Mongo branch coverage (final 0.3%)', () => {
+
+  test('should execute DB save path (non-test env)', async () => {
+    jest.resetModules();
+
+    // Temporarily switch env
+    process.env.NODE_ENV = 'development';
+
+    // Mock DB to avoid real connection
+    jest.doMock('../src/models/Analysis', () => ({
+      create: jest.fn().mockResolvedValue({})
+    }));
+
+    const appWithDB = require('../src/app');
+    const req = require('supertest')(appWithDB);
+
+    const res = await req
+      .post('/api/analysis/analyze')
+      .send({
+        schemaV1: { a: 'string' },
+        schemaV2: { a: 'string' },
+        dataset: []
+      });
+
+    expect(res.status).toBe(200);
+
+    // restore env
+    process.env.NODE_ENV = 'test';
+  });
+
+});
