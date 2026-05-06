@@ -43,3 +43,12 @@ describe('detectSchemaDiff', () => {
     expect(result.removed).toHaveLength(0);
   });
 });
+
+
+test('schemaDiff handles identical schemas', () => {
+  const schema = { a: 'string' };
+  const result = detectSchemaDiff(schema, schema);
+
+  expect(result.added.length).toBe(0);
+  expect(result.removed.length).toBe(0);
+});

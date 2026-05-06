@@ -236,3 +236,9 @@ describe('Mongo branch coverage (final 0.3%)', () => {
   });
 
 });
+
+test('GET /api/analysis/history in test mode', async () => {
+  const res = await request(app).get('/api/analysis/history');
+  expect(res.status).toBe(200);
+  expect(res.body.success).toBe(true);
+});
