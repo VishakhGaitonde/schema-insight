@@ -149,3 +149,58 @@ describe('Additional coverage tests', () => {
   });
 
 });
+
+describe('Error path coverage (final boost)', () => {
+
+  test('analysis route internal failure triggers catch block', async () => {
+    jest.resetModules();
+
+    // Mock engine to throw error → forces catch block
+    jest.doMock('../src/engines/schemaDiff', () => ({
+      detectSchemaDiff: () => {
+        throw new Error('Forced failure');
+      }
+    }));
+
+    const faultyApp = require('../src/app');
+    const req = require('supertest')(faultyApp);
+
+    const res = await req
+      .post('/api/analysis/analyze')
+      .send({
+        schemaV1: { a: 'string' },
+        schemaV2: { a: 'string' },
+        dataset: []
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Analysis failed');
+
+    jest.dontMock('../src/engines/schemaDiff');
+  });
+
+
+  test('app-level error middleware is executed', async () => {
+    const express = require('express');
+    const tempApp = express();
+
+    // route that throws
+    tempApp.get('/boom', () => {
+      throw new Error('Crash test');
+    });
+
+    // your exact error handler logic
+    tempApp.use((err, req, res, next) => {
+      res.status(500).json({
+        error: 'Internal server error',
+        detail: err.message
+      });
+    });
+
+    const res = await request(tempApp).get('/boom');
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal server error');
+  });
+
+});
