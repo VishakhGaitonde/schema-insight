@@ -55,7 +55,9 @@ const isTestEnv = process.env.NODE_ENV === 'test';
 
 let server;
 
-// 🔹 Exported for testing
+// =====================
+// DB CONNECTION
+// =====================
 async function connectDatabase() {
   if (isTestEnv) return;
 
@@ -68,7 +70,9 @@ async function connectDatabase() {
   }
 }
 
-// 🔹 Exported
+// =====================
+// SERVER START
+// =====================
 function startServer() {
   if (!server) {
     server = app.listen(PORT, () =>
@@ -78,7 +82,9 @@ function startServer() {
   return server;
 }
 
-// 🔹 Exported
+// =====================
+// SHUTDOWN
+// =====================
 function setupGracefulShutdown() {
   process.on('SIGTERM', () => {
     if (!server) return;
@@ -90,7 +96,9 @@ function setupGracefulShutdown() {
   });
 }
 
-// 🔹 Exported
+// =====================
+// BOOTSTRAP
+// =====================
 async function bootstrap() {
   await connectDatabase();
   startServer();
@@ -105,7 +113,9 @@ if (!isTestEnv) {
   });
 }
 
-// 🔹 Cleanup helpers
+// =====================
+// CLEANUP HELPERS
+// =====================
 function closeServer() {
   return new Promise((resolve) => {
     if (server) {
@@ -136,7 +146,7 @@ function closeDatabase() {
   });
 }
 
-// 🔹 Export everything needed for coverage
+// ✅ EXPORT FIX (CRITICAL)
 module.exports = {
   app,
   connectDatabase,
