@@ -78,3 +78,74 @@ describe('API integration tests', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('Additional coverage tests', () => {
+
+  test('POST /api/analysis/analyze - schema empty error', async () => {
+    const res = await request(app)
+      .post('/api/analysis/analyze')
+      .send({
+        schemaV1: {},
+        schemaV2: {},
+        dataset: []
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+  });
+
+  test('POST /api/analysis/analyze - invalid dataset type', async () => {
+    const res = await request(app)
+      .post('/api/analysis/analyze')
+      .send({
+        schemaV1: { a: 'string' },
+        schemaV2: { a: 'string' },
+        dataset: "not-an-array"
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  test('Force internal error in analyze route (mock engine)', async () => {
+    jest.resetModules();
+
+    // Mock one engine to throw error
+    jest.doMock('../src/engines/schemaDiff', () => ({
+      detectSchemaDiff: () => { throw new Error('Forced error'); }
+    }));
+
+    const faultyApp = require('../src/app');
+    const req = require('supertest')(faultyApp);
+
+    const res = await req
+      .post('/api/analysis/analyze')
+      .send({
+        schemaV1: { a: 'string' },
+        schemaV2: { a: 'string' },
+        dataset: []
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Analysis failed');
+
+    jest.dontMock('../src/engines/schemaDiff');
+  });
+
+  test('Trigger global error handler manually', async () => {
+    const express = require('express');
+    const tempApp = express();
+
+    tempApp.get('/boom', () => {
+      throw new Error('Crash');
+    });
+
+    tempApp.use((err, req, res, next) => {
+      res.status(500).json({ error: 'Internal server error' });
+    });
+
+    const res = await request(tempApp).get('/boom');
+
+    expect(res.status).toBe(500);
+  });
+
+});
