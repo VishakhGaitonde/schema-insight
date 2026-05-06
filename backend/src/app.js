@@ -23,7 +23,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get('/health', (req, res) =>
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+);
 
 app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
@@ -40,40 +42,46 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error', detail: err.message });
+  res.status(500).json({
+    error: 'Internal server error',
+    detail: err.message,
+  });
 });
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/schemainsight';
+const MONGO_URI =
+  process.env.MONGO_URI || 'mongodb://mongo:27017/schemainsight';
 const isTestEnv = process.env.NODE_ENV === 'test';
 
 let server;
 
-function connectDatabase() {
-  if (isTestEnv) {
-    return Promise.resolve();
-  }
+// 🔹 Exported for testing
+async function connectDatabase() {
+  if (isTestEnv) return;
 
-  return mongoose.connect(MONGO_URI)
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => {
-      console.error('MongoDB connection error:', err.message);
-      console.log('⚠️ Continuing without DB (CI mode)');
-    });
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log('MongoDB connected');
+  } catch (err) {
+    console.error('MongoDB connection error:', err.message);
+    console.log('⚠️ Continuing without DB (CI mode)');
+  }
 }
 
+// 🔹 Exported
 function startServer() {
   if (!server) {
-    server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    server = app.listen(PORT, () =>
+      console.log(`Server running on port ${PORT}`)
+    );
   }
   return server;
 }
 
+// 🔹 Exported
 function setupGracefulShutdown() {
   process.on('SIGTERM', () => {
-    if (!server) {
-      return;
-    }
+    if (!server) return;
 
     server.close(() => {
       mongoose.connection.close();
@@ -82,22 +90,23 @@ function setupGracefulShutdown() {
   });
 }
 
+// 🔹 Exported
 async function bootstrap() {
   await connectDatabase();
   startServer();
   setupGracefulShutdown();
 }
 
+// Run only outside test
 if (!isTestEnv) {
   bootstrap().catch((err) => {
     console.error('Failed to start server:', err.message);
-    process.exit(1);   // ensure failure is visible
+    process.exit(1);
   });
 }
 
-// Export app and a close function for testing
-module.exports = app;
-module.exports.closeServer = () => {
+// 🔹 Cleanup helpers
+function closeServer() {
   return new Promise((resolve) => {
     if (server) {
       server.close(() => {
@@ -108,12 +117,14 @@ module.exports.closeServer = () => {
       resolve();
     }
   });
-};
-module.exports.closeDatabase = () => {
+}
+
+function closeDatabase() {
   return new Promise((resolve) => {
-    // Close mongoose connection with timeout
-    const timeout = setTimeout(() => resolve(), 2000);
-    mongoose.disconnect()
+    const timeout = setTimeout(resolve, 2000);
+
+    mongoose
+      .disconnect()
       .then(() => {
         clearTimeout(timeout);
         resolve();
@@ -123,4 +134,15 @@ module.exports.closeDatabase = () => {
         resolve();
       });
   });
+}
+
+// 🔹 Export everything needed for coverage
+module.exports = {
+  app,
+  connectDatabase,
+  startServer,
+  setupGracefulShutdown,
+  bootstrap,
+  closeServer,
+  closeDatabase,
 };

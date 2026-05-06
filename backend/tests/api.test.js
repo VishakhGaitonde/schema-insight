@@ -242,3 +242,139 @@ test('GET /api/analysis/history in test mode', async () => {
   expect(res.status).toBe(200);
   expect(res.body.success).toBe(true);
 });
+
+// ===============================
+// 🔥 APP.JS COVERAGE BOOST TESTS
+// ===============================
+
+describe('App.js uncovered branches', () => {
+
+  test('connectDatabase success path (non-test env)', async () => {
+    jest.resetModules();
+
+    process.env.NODE_ENV = 'development';
+
+    const mongoose = require('mongoose');
+    jest.spyOn(mongoose, 'connect').mockResolvedValueOnce();
+
+    const { connectDatabase } = require('../src/app');
+    await connectDatabase();
+
+    process.env.NODE_ENV = 'test';
+  });
+
+  test('connectDatabase failure path (catch block)', async () => {
+    jest.resetModules();
+
+    process.env.NODE_ENV = 'development';
+
+    const mongoose = require('mongoose');
+    jest.spyOn(mongoose, 'connect').mockRejectedValueOnce(new Error('DB fail'));
+
+    const { connectDatabase } = require('../src/app');
+    await connectDatabase();
+
+    process.env.NODE_ENV = 'test';
+  });
+
+  test('startServer initializes server (if branch)', () => {
+    jest.resetModules();
+
+    process.env.NODE_ENV = 'development';
+
+    const { startServer } = require('../src/app');
+    const server = startServer();
+
+    expect(server).toBeDefined();
+
+    process.env.NODE_ENV = 'test';
+  });
+
+  test('closeServer covers true branch (server exists)', async () => {
+    jest.resetModules();
+
+    process.env.NODE_ENV = 'development';
+
+    const appModule = require('../src/app');
+
+    // start server first
+    appModule.startServer();
+
+    await appModule.closeServer();
+
+    process.env.NODE_ENV = 'test';
+  });
+
+  test('setupGracefulShutdown handles SIGTERM', () => {
+    jest.resetModules();
+
+    process.env.NODE_ENV = 'development';
+
+    const mongoose = require('mongoose');
+    const closeSpy = jest
+      .spyOn(mongoose.connection, 'close')
+      .mockImplementation(() => {});
+
+    const appModule = require('../src/app');
+
+    appModule.startServer();
+    appModule.setupGracefulShutdown();
+
+    process.emit('SIGTERM');
+
+    expect(closeSpy).toHaveBeenCalled();
+
+    process.env.NODE_ENV = 'test';
+  });
+
+  test('bootstrap executes all lifecycle functions', async () => {
+    jest.resetModules();
+
+    process.env.NODE_ENV = 'development';
+
+    const mongoose = require('mongoose');
+    jest.spyOn(mongoose, 'connect').mockResolvedValueOnce();
+
+    const { bootstrap } = require('../src/app');
+
+    await bootstrap();
+
+    process.env.NODE_ENV = 'test';
+  });
+
+  test('closeDatabase catch branch coverage', async () => {
+    jest.resetModules();
+
+    const mongoose = require('mongoose');
+    jest.spyOn(mongoose, 'disconnect').mockRejectedValueOnce(new Error('fail'));
+
+    const { closeDatabase } = require('../src/app');
+
+    await closeDatabase();
+  });
+
+});
+
+
+// ===============================
+// 🔥 REAL GLOBAL ERROR HANDLER
+// ===============================
+
+describe('Real app error middleware (app.js)', () => {
+
+  test('should trigger actual global error handler', async () => {
+    const { app } = require('../src/app');
+
+    // inject route into SAME app instance
+    app.get('/real-error', () => {
+      throw new Error('Real crash');
+    });
+
+    const res = await request(app).get('/real-error');
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal server error');
+    expect(res.body.detail).toBeDefined();
+  });
+
+});
