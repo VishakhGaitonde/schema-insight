@@ -45,29 +45,53 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/schemainsight';
-
-// Skip MongoDB connection in test mode
-if (process.env.NODE_ENV !== 'test') {
-  mongoose.connect(MONGO_URI)
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error('MongoDB connection error:', err.message));
-} else {
-  // Disconnect mongoose in test mode to avoid hanging
-  mongoose.disconnect();
-}
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 let server;
 
-// Only start server if this is not a test environment
-if (process.env.NODE_ENV !== 'test') {
-  server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+function connectDatabase() {
+  if (isTestEnv) {
+    return Promise.resolve();
+  }
 
-  // Graceful shutdown
+  return mongoose.connect(MONGO_URI)
+    .then(() => console.log('MongoDB connected'))
+    .catch((err) => {
+      console.error('MongoDB connection error:', err.message);
+      console.log('⚠️ Continuing without DB (CI mode)');
+    });
+}
+
+function startServer() {
+  if (!server) {
+    server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  }
+  return server;
+}
+
+function setupGracefulShutdown() {
   process.on('SIGTERM', () => {
+    if (!server) {
+      return;
+    }
+
     server.close(() => {
       mongoose.connection.close();
       console.log('Server shut down gracefully');
     });
+  });
+}
+
+async function bootstrap() {
+  await connectDatabase();
+  startServer();
+  setupGracefulShutdown();
+}
+
+if (!isTestEnv) {
+  bootstrap().catch((err) => {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);   // ensure failure is visible
   });
 }
 
@@ -76,7 +100,10 @@ module.exports = app;
 module.exports.closeServer = () => {
   return new Promise((resolve) => {
     if (server) {
-      server.close(resolve);
+      server.close(() => {
+        server = null;
+        resolve();
+      });
     } else {
       resolve();
     }

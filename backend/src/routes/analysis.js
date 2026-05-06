@@ -58,7 +58,9 @@ router.post('/analyze', async (req, res) => {
     res.json({ success: true, result });
   } catch (err) {
     errorCounter.inc({ route: '/analyze' });
-    console.error(err);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(err);
+    }
     res.status(500).json({ error: 'Analysis failed', detail: err.message });
   }
 });
