@@ -50,7 +50,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI =
-  process.env.MONGO_URI || 'mongodb://mongo:27017/schemainsight';
+  process.env.MONGO_URI || 'mongodb://localhost:27017/schemainsight';
+
 const isTestEnv = process.env.NODE_ENV === 'test';
 
 let server;
@@ -73,11 +74,25 @@ async function connectDatabase() {
 // =====================
 // SERVER START
 // =====================
+// inside startServer()
+
 function startServer() {
   if (!server) {
-    server = app.listen(PORT, () =>
-      console.log(`Server running on port ${PORT}`)
-    );
+    server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+    // ✅ FIX: guard for mocked server
+    if (server && typeof server.on === 'function') {
+      server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.error(`Port ${PORT} already in use`);
+        } else {
+          console.error(err);
+        }
+        process.exit(1);
+      });
+    }
   }
   return server;
 }
@@ -146,7 +161,7 @@ function closeDatabase() {
   });
 }
 
-// ✅ EXPORT FIX (CRITICAL)
+// ✅ EXPORT (important)
 module.exports = {
   app,
   connectDatabase,
