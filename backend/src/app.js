@@ -88,10 +88,10 @@ async function bootstrap() {
   setupGracefulShutdown();
 }
 
-if (require.main === module && !isTestEnv) {
+if (!isTestEnv) {
   bootstrap().catch((err) => {
     console.error('Failed to start server:', err.message);
-    process.exitCode = 1;
+    process.exit(1);   // ensure failure is visible
   });
 }
 
