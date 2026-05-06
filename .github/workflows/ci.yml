@@ -114,6 +114,7 @@ jobs:
         env:
           PORT: 5000
           MONGO_URI: mongodb://localhost:27017/schemainsight
+          NODE_ENV: development
 
       - name: Wait for server to be ready
         run: |
