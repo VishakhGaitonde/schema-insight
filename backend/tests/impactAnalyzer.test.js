@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 const { analyzeImpact } = require('../src/engines/impactAnalyzer');
 
 describe('analyzeImpact', () => {

@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 const { detectSchemaDiff } = require('../src/engines/schemaDiff');
 
 describe('detectSchemaDiff', () => {

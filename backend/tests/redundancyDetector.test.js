@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 const { detectRedundancy } = require('../src/engines/redundancyDetector');
 
 describe('detectRedundancy', () => {
