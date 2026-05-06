@@ -106,6 +106,8 @@ jobs:
   terraform-validate:
     name: Terraform — validate config
     runs-on: ubuntu-latest
+    env:
+      TF_SKIP_PROVIDER_VERIFICATION: "true"
     steps:
       - uses: actions/checkout@v4
 
