@@ -97,7 +97,6 @@ if (!isTestEnv) {
 
 // Export app and a close function for testing
 module.exports = app;
-module.exports.bootstrap = bootstrap;
 module.exports.closeServer = () => {
   return new Promise((resolve) => {
     if (server) {
