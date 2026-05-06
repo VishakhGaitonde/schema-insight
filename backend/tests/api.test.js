@@ -64,25 +64,23 @@ describe('App.js coverage', () => {
     jest.restoreAllMocks();
   });
 
-  test('connectDatabase success branch (force non-test)', async () => {
-    jest.resetModules();
+  test('connectDatabase success branch (mocked, no real DB)', async () => {
+  const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    process.env.NODE_ENV = 'development';
+  const mongoose = require('mongoose');
+  jest.spyOn(mongoose, 'connect').mockResolvedValueOnce({});
 
-    const mongoose = require('mongoose');
-    jest.spyOn(mongoose, 'connect').mockResolvedValueOnce({});
+  // temporarily override test env behavior
+  const originalEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'development';
 
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  await connectDatabase();
 
-    const { connectDatabase } = require('../src/app');
+  expect(consoleSpy).toHaveBeenCalledWith('MongoDB connected');
 
-    await connectDatabase();
-
-    expect(consoleSpy).toHaveBeenCalledWith('MongoDB connected');
-
-    consoleSpy.mockRestore();
-    process.env.NODE_ENV = 'test';
-  });
+  process.env.NODE_ENV = originalEnv;
+  consoleSpy.mockRestore();
+});
 
   test('startServer works', () => {
     const server = startServer();
