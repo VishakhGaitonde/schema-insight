@@ -1,21 +1,16 @@
-/**
- * Rule-based redundancy detection.
- * Rule 1: Exact duplicate fields (same values across all rows)
- * Rule 2: Derived fields (A = B + " " + C)
- * Rule 3: Same-prefix fields (address_city, address_country → likely redundant grouping)
- * Rule 4: Constant fields (field has same value in every row — useless to store)
- */
 function detectRedundancy(schema, dataset) {
   const redundancies = [];
   const fields = Object.keys(schema);
 
   if (!dataset || dataset.length === 0) return redundancies;
 
-  // Rule 1: duplicate values between two fields
+  // Rule 1: duplicate fields
   for (let i = 0; i < fields.length; i++) {
     for (let j = i + 1; j < fields.length; j++) {
       const a = fields[i], b = fields[j];
-      const allSame = dataset.every(row => row[a] !== undefined && row[a] === row[b]);
+      const allSame = dataset.every(
+        row => row[a] !== undefined && row[b] !== undefined && String(row[a]) === String(row[b])
+      );
       if (allSame) {
         redundancies.push({
           type: 'duplicate',
@@ -27,15 +22,20 @@ function detectRedundancy(schema, dataset) {
     }
   }
 
-  // Rule 2: derived field (X = Y + " " + Z)
+  // Rule 2: derived fields (X = Y + " " + Z)
   for (const target of fields) {
     for (let i = 0; i < fields.length; i++) {
       for (let j = i + 1; j < fields.length; j++) {
         const a = fields[i], b = fields[j];
         if (a === target || b === target) continue;
-        const allDerived = dataset.every(row =>
-          row[target] === `${row[a]} ${row[b]}` ||
-          row[target] === `${row[b]} ${row[a]}`
+        const defined = dataset.filter(
+          row => row[target] !== undefined && row[a] !== undefined && row[b] !== undefined
+        );
+        if (defined.length === 0) continue;
+        const allDerived = defined.every(
+          row =>
+            String(row[target]) === `${row[a]} ${row[b]}` ||
+            String(row[target]) === `${row[b]} ${row[a]}`
         );
         if (allDerived) {
           redundancies.push({
@@ -49,7 +49,7 @@ function detectRedundancy(schema, dataset) {
     }
   }
 
-  // Rule 3: same-prefix fields (e.g. address_city, address_zip → group into object)
+  // Rule 3: same-prefix grouping
   const prefixMap = {};
   for (const field of fields) {
     const parts = field.split('_');
@@ -70,21 +70,31 @@ function detectRedundancy(schema, dataset) {
     }
   }
 
-  // Rule 4: constant field (same value in every row — no info gain)
+  // Rule 4: constant fields
   for (const field of fields) {
-    const values = dataset.map(row => row[field]);
-    const allSame = values.every(v => v === values[0]) && values[0] !== undefined;
-    if (allSame && dataset.length > 1) {
+    const values = dataset
+      .map(row => row[field])
+      .filter(v => v !== undefined && v !== null);
+    if (values.length < 2) continue;
+    const allSame = values.every(v => String(v) === String(values[0]));
+    if (allSame) {
       redundancies.push({
         type: 'constant',
         fields: [field],
         severity: 'low',
-        message: `"${field}" has the same value ("${values[0]}") in every row — may be unnecessary to store`,
+        message: `"${field}" has the same value ("${values[0]}") in every row — may be unnecessary to store per row`,
       });
     }
   }
 
-  return redundancies;
+  // Deduplicate
+  const seen = new Set();
+  return redundancies.filter(r => {
+    const key = `${r.type}-${r.fields.sort().join(',')}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 module.exports = { detectRedundancy };

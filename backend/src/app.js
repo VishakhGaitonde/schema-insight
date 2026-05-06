@@ -1,26 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const client = require('prom-client');
 require('dotenv').config();
+
+const {
+  register,
+  httpRequestDuration,
+} = require('./middleware/metrics');
 
 const analysisRoutes = require('./routes/analysis');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-// Prometheus metrics
-const register = new client.Registry();
-client.collectDefaultMetrics({ register });
-
-const httpRequestDuration = new client.Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status'],
-  registers: [register],
-});
-
+// HTTP duration tracking
 app.use((req, res, next) => {
   const end = httpRequestDuration.startTimer();
   res.on('finish', () => {
@@ -29,27 +23,77 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
 app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
 app.use('/api/analysis', analysisRoutes);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal server error', detail: err.message });
+});
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/schemainsight';
 
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-    // Start server anyway for health checks / local dev without mongo
-    app.listen(PORT, () => console.log(`Server running on port ${PORT} (no DB)`));
-  });
+// Skip MongoDB connection in test mode
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err.message));
+} else {
+  // Disconnect mongoose in test mode to avoid hanging
+  mongoose.disconnect();
+}
 
+let server;
+
+// Only start server if this is not a test environment
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    server.close(() => {
+      mongoose.connection.close();
+      console.log('Server shut down gracefully');
+    });
+  });
+}
+
+// Export app and a close function for testing
 module.exports = app;
+module.exports.closeServer = () => {
+  return new Promise((resolve) => {
+    if (server) {
+      server.close(resolve);
+    } else {
+      resolve();
+    }
+  });
+};
+module.exports.closeDatabase = () => {
+  return new Promise((resolve) => {
+    // Close mongoose connection with timeout
+    const timeout = setTimeout(() => resolve(), 2000);
+    mongoose.disconnect()
+      .then(() => {
+        clearTimeout(timeout);
+        resolve();
+      })
+      .catch(() => {
+        clearTimeout(timeout);
+        resolve();
+      });
+  });
+};
