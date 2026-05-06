@@ -5,10 +5,10 @@ const request = require('supertest');
 const express = require('express');
 const mongoose = require('mongoose');
 
-// ✅ FIXED MOCK (now includes .on)
+// ✅ stable mock (no error handler capture attempts)
 jest.spyOn(express.application, 'listen').mockImplementation(() => ({
   close: (cb) => cb && cb(),
-  on: () => {}, // 🔥 critical fix
+  on: () => {},
 }));
 
 const {
@@ -25,7 +25,6 @@ const {
 // ===============================
 // API TESTS
 // ===============================
-
 describe('API integration tests', () => {
 
   test('GET /health', async () => {
@@ -48,9 +47,8 @@ describe('API integration tests', () => {
 
 
 // ===============================
-// COVERAGE TESTS
+// CORE COVERAGE TESTS
 // ===============================
-
 describe('App.js coverage', () => {
 
   test('connectDatabase success', async () => {
@@ -102,19 +100,17 @@ describe('App.js coverage', () => {
 
 
 // ===============================
-// ERROR HANDLER (FIXED PROPER WAY)
+// BASIC ERROR HANDLER TEST
 // ===============================
-
 describe('Error handler', () => {
 
-  test('global error middleware works', async () => {
+  test('global error middleware works (isolated)', async () => {
     const tempApp = express();
 
     tempApp.get('/boom', () => {
       throw new Error('Boom');
     });
 
-    // use SAME logic as your app
     tempApp.use((err, req, res, next) => {
       res.status(500).json({
         error: 'Internal server error',
@@ -134,9 +130,7 @@ describe('Error handler', () => {
 // ===============================
 // CLEANUP
 // ===============================
-
 afterAll(async () => {
   await closeServer();
   await closeDatabase();
 });
-
