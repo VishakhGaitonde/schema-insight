@@ -11,8 +11,15 @@ const {
 const analysisRoutes = require('./routes/analysis');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://YOUR-VERCEL-APP.vercel.app'
+  ],
+  credentials: true,
+}));
 app.use(express.json({ limit: '1mb' }));
+app.set('trust proxy', 1);
 
 // HTTP duration tracking
 app.use((req, res, next) => {
@@ -78,9 +85,7 @@ async function connectDatabase() {
 
 function startServer() {
   if (!server) {
-    server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+    server = app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 
     // ✅ FIX: guard for mocked server
     if (server && typeof server.on === 'function') {
