@@ -92,27 +92,31 @@ export default function Header() {
           GitHub
         </a>
 
-        <a
-          href="http://localhost:9090"
-          target="_blank"
-          rel="noreferrer"
-          style={linkStyle}
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
-        >
-          Prometheus
-        </a>
+        {import.meta.env.DEV && (
+          <>
+            <a
+              href="http://localhost:9090"
+              target="_blank"
+              rel="noreferrer"
+              style={linkStyle}
+              onMouseEnter={handleEnter}
+              onMouseLeave={handleLeave}
+            >
+              Prometheus
+            </a>
 
-        <a
-          href="http://localhost:3001"
-          target="_blank"
-          rel="noreferrer"
-          style={linkStyle}
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
-        >
-          Grafana
-        </a>
+            <a
+              href="http://localhost:3001"
+              target="_blank"
+              rel="noreferrer"
+              style={linkStyle}
+              onMouseEnter={handleEnter}
+              onMouseLeave={handleLeave}
+            >
+              Grafana
+            </a>
+          </>
+        )}
       </div>
     </header>
   );
