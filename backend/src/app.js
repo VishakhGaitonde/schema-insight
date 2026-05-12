@@ -12,10 +12,7 @@ const analysisRoutes = require('./routes/analysis');
 
 const app = express();
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://schema-insight.vercel.app/'
-  ],
+  origin: true,
   credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));
