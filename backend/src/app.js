@@ -14,7 +14,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://YOUR-VERCEL-APP.vercel.app'
+    'https://schema-insight.vercel.app/'
   ],
   credentials: true,
 }));
